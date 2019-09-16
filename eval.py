@@ -3,24 +3,28 @@ import os
 import re
 from hparams import hparams, hparams_debug_string
 from synthesizer import Synthesizer
+import time
 
 
 sentences = [
-  # From July 8, 2017 New York Times:
-  'Scientists at the CERN laboratory say they have discovered a new particle.',
-  'There’s a way to measure the acute emotional intelligence that has never gone out of style.',
-  'President Trump met with other leaders at the Group of 20 conference.',
-  'The Senate\'s bill to repeal and replace the Affordable Care Act is now imperiled.',
-  # From Google's Tacotron example page:
-  'Generative adversarial network or variational auto-encoder.',
-  'The buses aren\'t the problem, they actually provide a solution.',
-  'Does the quick brown fox jump over the lazy dog?',
-  'Talib Kweli confirmed to AllHipHop that he will be releasing an album in the next year.',
+  'Конституция долбоорун даярдоого кыргызстандык,',
+  'Бардык адамдар өз беделинде жана укуктарында,',
+  'Алардын аң-сезими менен абийири бар жана,',
+  'Грузия: экзит-полл шайлоодо Зурабишвили,',
+  'Украинанын Орусия кармаган деңиз аскерлери,',
+  'Ооганстанда аба соккудан отуздай жайкын,',
+  'Путин Керч кысыгындагы жаңжал үчүн Киевди,',
+  'Грузияда президенттик шайлоонун экинчи айлампасы,',
+  'Белизгейт гриф маселесине такалды,',
+  'Конституциянын жаңы редакциясына ылайык, мындан,',
+  'Орусия тарап мындай кадамы менен Украина бийлигинин,',
+  'НАТОнун Ооганстандагы миссиясынын маалыматына караганда,',
+  'Орусиянын президенти Владимир Путин бүгүнкү сөзүндө деңиздеги,'
 ]
 
 
 def get_output_base_path(checkpoint_path):
-  base_dir = os.path.dirname(checkpoint_path)
+  base_dir = os.path.dirname(checkpoint_path) + '/eval'
   m = re.compile(r'.*?\.ckpt\-([0-9]+)').match(checkpoint_path)
   name = 'eval-%d' % int(m.group(1)) if m else 'eval'
   return os.path.join(base_dir, name)
@@ -32,7 +36,7 @@ def run_eval(args):
   synth.load(args.checkpoint)
   base_path = get_output_base_path(args.checkpoint)
   for i, text in enumerate(sentences):
-    path = '%s-%d.wav' % (base_path, i)
+    path = '%s-%d.wav' % (base_path +"-"+ str(int(time.time())), i)
     print('Synthesizing: %s' % path)
     with open(path, 'wb') as f:
       f.write(synth.synthesize(text))
@@ -51,3 +55,21 @@ def main():
 
 if __name__ == '__main__':
   main()
+
+'''
+sentences = [
+  'Конституция долбоорун даярдоого кыргызстандык жана эл аралык эксперттер тартылып, адистердин айтымында баш мыйзам дүйнөлүк талаптарга демократиялык принциптерге толук жооп берген.',
+  'Бардык адамдар өз беделинде жана укуктарында эркин жана тең укуктуу болуп жаралат.',
+  'Алардын аң-сезими менен абийири бар жана бири-бирине бир туугандык мамиле кылууга тийиш.',
+  'Грузия: экзит-полл шайлоодо Зурабишвили жеңгенин көргөзүүдө',
+  'Украинанын Орусия кармаган деңиз аскерлери эки айга камалды',
+  'Ооганстанда аба соккудан отуздай жайкын тургундун өмүрү кыйылды',
+  'Путин Керч кысыгындагы жаңжал үчүн Киевди айыптады',
+  'Грузияда президенттик шайлоонун экинчи айлампасы аяктаганы турат',
+  'Белизгейт гриф маселесине такалды',
+  'Конституциянын жаңы редакциясына ылайык, мындан кийин президентти өлкөнүн парламенти жана жергиликтүү бийлик өкүлдөрү менен шайлоочулардын жамааты шайлашы керек.',
+  'Орусия тарап мындай кадамы менен Украина бийлигинин жана Батыш өлкөлөрүнүн моряктарды тезинен бошотуу жөнүндөгү чакырыктарына кулак салган жок.',
+  'НАТОнун Ооганстандагы миссиясынын маалыматына караганда, Ооганстандын өкмөттүк күчтөрү жана америкалык аскерий кеңешчилер биринчи ноябрь күнү Гилменддин Гармсир районунда “Талибан” согушкерлеринин аткылоосуна кабылган жана абадан колдоо көргөзүүнү суранышкан.',
+  'Орусиянын президенти Владимир Путин бүгүнкү сөзүндө деңиздеги карама-каршылык үчүн расмий Киевди күнөөлөдү.'
+]
+'''

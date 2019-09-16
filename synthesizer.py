@@ -6,9 +6,11 @@ from librosa import effects
 from models import create_model
 from text import text_to_sequence
 from util import audio
-
+from threading import Lock
 
 class Synthesizer:
+  processing = False
+  mutex = Lock()
   def load(self, checkpoint_path, model_name='tacotron'):
     print('Constructing model: %s' % model_name)
     inputs = tf.placeholder(tf.int32, [1, None], 'inputs')
@@ -26,15 +28,22 @@ class Synthesizer:
 
 
   def synthesize(self, text):
-    cleaner_names = [x.strip() for x in hparams.cleaners.split(',')]
-    seq = text_to_sequence(text, cleaner_names)
-    feed_dict = {
-      self.model.inputs: [np.asarray(seq, dtype=np.int32)],
-      self.model.input_lengths: np.asarray([len(seq)], dtype=np.int32)
-    }
-    wav = self.session.run(self.wav_output, feed_dict=feed_dict)
-    wav = audio.inv_preemphasis(wav)
-    wav = wav[:audio.find_endpoint(wav)]
-    out = io.BytesIO()
-    audio.save_wav(wav, out)
-    return out.getvalue()
+    with Synthesizer.mutex:
+      if not Synthesizer.processing:
+        Synthesizer.processing = True
+        cleaner_names = [x.strip() for x in hparams.cleaners.split(',')]
+        seq = text_to_sequence(text, cleaner_names)
+        feed_dict = {
+        self.model.inputs: [np.asarray(seq, dtype=np.int32)],
+        self.model.input_lengths: np.asarray([len(seq)], dtype=np.int32)
+        }
+        wav = self.session.run(self.wav_output, feed_dict=feed_dict)
+        wav = audio.inv_preemphasis(wav)
+        wav = wav[:audio.find_endpoint(wav)]
+        out = io.BytesIO()
+        audio.save_wav(wav, out)
+        Synthesizer.processing = False
+        return out.getvalue()
+      else:
+        return None
+
